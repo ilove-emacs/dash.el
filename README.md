@@ -165,7 +165,7 @@ Functions returning a sublist of the original list.
 Functions returning a modified copy of the input list.
 
 * [`-keep`](#-keep-fn-list) `(fn list)`
-* [`-concat`](#-concat-rest-lists) `(&rest lists)`
+* [`-concat`](#-concat-rest-sequences) `(&rest sequences)`
 * [`-flatten`](#-flatten-l) `(l)`
 * [`-flatten-n`](#-flatten-n-num-list) `(num list)`
 * [`-replace`](#-replace-old-new-list) `(old new list)`
@@ -406,9 +406,9 @@ This function's anaphoric counterpart is `--map`.
 
 #### -map-when `(pred rep list)`
 
-Return a new list where the elements in `list` that do not match the `pred` function
-are unchanged, and where the elements in `list` that do match the `pred` function are mapped
-through the `rep` function.
+Use `pred` to conditionally apply `rep` to each item in `list`.
+Return a copy of `list` where the items for which `pred` returns nil
+are unchanged, and the rest are mapped through the `rep` function.
 
 Alias: `-replace-where`
 
@@ -422,7 +422,9 @@ See also: [`-update-at`](#-update-at-n-func-list)
 
 #### -map-first `(pred rep list)`
 
-Replace first item in `list` satisfying `pred` with result of `rep` called on this item.
+Use `pred` to determine the first item in `list` to call `rep` on.
+Return a copy of `list` where the first item for which `pred` returns
+non-nil is replaced with the result of calling `rep` on that item.
 
 See also: [`-map-when`](#-map-when-pred-rep-list), [`-replace-first`](#-replace-first-old-new-list)
 
@@ -434,7 +436,9 @@ See also: [`-map-when`](#-map-when-pred-rep-list), [`-replace-first`](#-replace-
 
 #### -map-last `(pred rep list)`
 
-Replace last item in `list` satisfying `pred` with result of `rep` called on this item.
+Use `pred` to determine the last item in `list` to call `rep` on.
+Return a copy of `list` where the last item for which `pred` returns
+non-nil is replaced with the result of calling `rep` on that item.
 
 See also: [`-map-when`](#-map-when-pred-rep-list), [`-replace-last`](#-replace-last-old-new-list)
 
@@ -784,9 +788,12 @@ Its anaphoric counterpart is `--keep`.
 (--keep (and (> it 3) (* 10 it)) '(1 2 3 4 5 6)) ;; => (40 50 60)
 ```
 
-#### -concat `(&rest lists)`
+#### -concat `(&rest sequences)`
 
-Return a new list with the concatenation of the elements in the supplied `lists`.
+Concatenate all the arguments and make the result a list.
+The result is a list whose elements are the elements of all the arguments.
+Each argument may be a list, vector or string.
+The last argument is not copied, just used as the tail of the new list.
 
 ```el
 (-concat '(1)) ;; => (1)
@@ -893,7 +900,9 @@ See also: [`-replace`](#-replace-old-new-list)
 
 #### -update-at `(n func list)`
 
-Return a list with element at `n`th position in `list` replaced with `(func (nth n list))`.
+Use `func` to update the `n`th element of `list`.
+Return a copy of `list` where the `n`th element is replaced with the
+result of calling `func` on it.
 
 See also: [`-map-when`](#-map-when-pred-rep-list)
 
@@ -1348,8 +1357,10 @@ Alias: `-none-p`
 
 #### -only-some? `(pred list)`
 
-Return `t` if at least one item of `list` matches `pred` and at least one item of `list` does not match `pred`.
-Return `nil` both if all items match the predicate or if none of the items match the predicate.
+Return t if different `list` items both satisfy and do not satisfy `pred`.
+That is, if `pred` returns both nil for at least one item, and
+non-nil for at least one other item in `list`.  Return nil if all
+items satisfy the predicate or none of them do.
 
 Alias: `-only-some-p`
 
@@ -1460,7 +1471,14 @@ is done in a single list traversal.
 
 #### -split-with `(pred list)`
 
-Return a list of ((-take-while `pred` `list`) (-drop-while `pred` `list`)), in no more than one pass through the list.
+Split `list` into a prefix satisfying `pred`, and the rest.
+The first sublist is the prefix of `list` with successive elements
+satisfying `pred`, and the second sublist is the remaining elements
+that do not.  The result is like performing
+
+    ((-take-while `pred` `list`) (-drop-while `pred` `list`))
+
+but in no more than a single pass through `list`.
 
 ```el
 (-split-with 'even? '(1 2 3 4)) ;; => (nil (1 2 3 4))
@@ -1503,7 +1521,12 @@ This function can be thought of as a generalization of
 
 #### -separate `(pred list)`
 
-Return a list of ((-filter `pred` `list`) (-remove `pred` `list`)), in one pass through the list.
+Split `list` into two sublists based on whether items satisfy `pred`.
+The result is like performing
+
+    ((-filter `pred` `list`) (-remove `pred` `list`))
+
+but in a single pass through `list`.
 
 ```el
 (-separate (lambda (num) (= 0 (% num 2))) '(1 2 3 4 5 6 7)) ;; => ((2 4 6) (1 3 5 7))

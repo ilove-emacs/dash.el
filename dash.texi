@@ -260,9 +260,9 @@ This function's anaphoric counterpart is @code{--map}.
 
 @anchor{-map-when}
 @defun -map-when (pred rep list)
-Return a new list where the elements in @var{list} that do not match the @var{pred} function
-are unchanged, and where the elements in @var{list} that do match the @var{pred} function are mapped
-through the @var{rep} function.
+Use @var{pred} to conditionally apply @var{rep} to each item in @var{list}.
+Return a copy of @var{list} where the items for which @var{pred} returns nil
+are unchanged, and the rest are mapped through the @var{rep} function.
 
 Alias: @code{-replace-where}
 
@@ -286,7 +286,9 @@ See also: @code{-update-at} (@pxref{-update-at})
 
 @anchor{-map-first}
 @defun -map-first (pred rep list)
-Replace first item in @var{list} satisfying @var{pred} with result of @var{rep} called on this item.
+Use @var{pred} to determine the first item in @var{list} to call @var{rep} on.
+Return a copy of @var{list} where the first item for which @var{pred} returns
+non-nil is replaced with the result of calling @var{rep} on that item.
 
 See also: @code{-map-when} (@pxref{-map-when}), @code{-replace-first} (@pxref{-replace-first})
 
@@ -308,7 +310,9 @@ See also: @code{-map-when} (@pxref{-map-when}), @code{-replace-first} (@pxref{-r
 
 @anchor{-map-last}
 @defun -map-last (pred rep list)
-Replace last item in @var{list} satisfying @var{pred} with result of @var{rep} called on this item.
+Use @var{pred} to determine the last item in @var{list} to call @var{rep} on.
+Return a copy of @var{list} where the last item for which @var{pred} returns
+non-nil is replaced with the result of calling @var{rep} on that item.
 
 See also: @code{-map-when} (@pxref{-map-when}), @code{-replace-last} (@pxref{-replace-last})
 
@@ -892,8 +896,11 @@ Its anaphoric counterpart is @code{--keep}.
 @end defun
 
 @anchor{-concat}
-@defun -concat (&rest lists)
-Return a new list with the concatenation of the elements in the supplied @var{lists}.
+@defun -concat (&rest sequences)
+Concatenate all the arguments and make the result a list.
+The result is a list whose elements are the elements of all the arguments.
+Each argument may be a list, vector or string.
+The last argument is not copied, just used as the tail of the new list.
 
 @example
 @group
@@ -1077,7 +1084,9 @@ See also: @code{-replace} (@pxref{-replace})
 
 @anchor{-update-at}
 @defun -update-at (n func list)
-Return a list with element at Nth position in @var{list} replaced with `(func (nth n list))`.
+Use @var{func} to update the Nth element of @var{list}.
+Return a copy of @var{list} where the Nth element is replaced with the
+result of calling @var{func} on it.
 
 See also: @code{-map-when} (@pxref{-map-when})
 
@@ -1842,8 +1851,10 @@ Alias: @code{-none-p}
 
 @anchor{-only-some?}
 @defun -only-some? (pred list)
-Return `t` if at least one item of @var{list} matches @var{pred} and at least one item of @var{list} does not match @var{pred}.
-Return `nil` both if all items match the predicate or if none of the items match the predicate.
+Return t if different @var{list} items both satisfy and do not satisfy @var{pred}.
+That is, if @var{pred} returns both nil for at least one item, and
+non-nil for at least one other item in @var{list}.  Return nil if all
+items satisfy the predicate or none of them do.
 
 Alias: @code{-only-some-p}
 
@@ -2035,7 +2046,14 @@ is done in a single list traversal.
 
 @anchor{-split-with}
 @defun -split-with (pred list)
-Return a list of ((-take-while @var{pred} @var{list}) (-drop-while @var{pred} @var{list})), in no more than one pass through the list.
+Split @var{list} into a prefix satisfying @var{pred}, and the rest.
+The first sublist is the prefix of @var{list} with successive elements
+satisfying @var{pred}, and the second sublist is the remaining elements
+that do not.  The result is like performing
+
+  ((-take-while @var{pred} @var{list}) (-drop-while @var{pred} @var{list}))
+
+but in no more than a single pass through @var{list}.
 
 @example
 @group
@@ -2108,7 +2126,12 @@ This function can be thought of as a generalization of
 
 @anchor{-separate}
 @defun -separate (pred list)
-Return a list of ((-filter @var{pred} @var{list}) (-remove @var{pred} @var{list})), in one pass through the list.
+Split @var{list} into two sublists based on whether items satisfy @var{pred}.
+The result is like performing
+
+  ((-filter @var{pred} @var{list}) (-remove @var{pred} @var{list}))
+
+but in a single pass through @var{list}.
 
 @example
 @group
